@@ -56,81 +56,151 @@ The Polybench test suite is a set of 30 computational kernels drawn from several
 % Need to define this somewhere
 \definecolor{Gray}{gray}{0.9}
 \begin{table*}[!hb]
-	\caption{Polybench Test Results: data size, by memory type (DRAM, PMEM, iPMEM), page size (4K, 2M), and optimization.  Execution time in seconds; sorted by 4K DRAM time improvement. Only shows test where polyhedral optimization benefitted at least one memory configuration; other results omitted. Memory locality impact differs across memory types and configurations. CPU and memory allocation are bound to the same NUMA node.}
+	\caption{Polybench Test Results: data size, by memory type (DRAM, PMEM, iPMEM), page size (4K, 2M), and optimization (\texttt{-O3} versus \texttt{-poly}).  Execution time in seconds; sorted by 4K DRAM time improvement (optimized versus poly). Only shows test where polyhedral optimization benefitted at least one memory configuration; other results omitted. Memory locality impact differs across memory types and configurations. CPU and memory allocation are bound to the same NUMA node. Ratio > 1 indicates benefit from polyhedral optimization.}
 	\label{table:poly2}
   \begin{adjustbox}{max width=\textwidth}
-    \begin{tabular}{r|S|SS|SS|SS|SS|SS|SS}
-      \multicolumn{1}{c}{Test} &
-      \multicolumn{1}{c}{Data} &
-      \multicolumn{4}{c}{DRAM} &
-      \multicolumn{4}{c}{PMEM} &
-      \multicolumn{4}{c}{iPMEM}
+    \begin{tabular}{r|S|SSS|SSS|SSS|SSS|SSS|SSS}
+      \multicolumn{1}{c|}{Test} &
+      \multicolumn{1}{c|}{Data} &
+      \multicolumn{6}{c|}{DRAM} &
+      \multicolumn{6}{c|}{PMEM} &
+      \multicolumn{6}{c}{iPMEM}
       \tabularnewline
-      & \multicolumn{1}{c|}{Size} & 
-      \multicolumn{2}{c}{4K} &
-      \multicolumn{2}{c}{2M} &
-      \multicolumn{2}{c}{4K} &
-      \multicolumn{2}{c}{2M} &
-      \multicolumn{2}{c}{4K} &
-      \multicolumn{2}{c}{2M}
+      & 
+      \multicolumn{1}{c|}{Size} & 
+      \multicolumn{3}{c}{4K} &
+      \multicolumn{3}{c|}{2M} &
+      \multicolumn{3}{c}{4K} &
+      \multicolumn{3}{c|}{2M} &
+      \multicolumn{3}{c}{4K} &
+      \multicolumn{3}{c}{2M}
       \tabularnewline
-        & {MB}& {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly}
+        & {MB} 
+        & {Opt}  & {Poly} & {Ratio} & {Opt} & {Poly} & {Ratio} 
+        & {Opt}  & {Poly} & {Ratio} & {Opt} & {Poly} & {Ratio} 
+        & {Opt}  & {Poly} & {Ratio} & {Opt} & {Poly} & {Ratio}
       \tabularnewline
       \hline
-      gemm & 91.6 & 29.28 & \textbf{1.53} & 14.07 & \textbf{1.52} & 39.04 & \textbf{1.73} & 31.99 & \textbf{1.71} & 37.84 & \textbf{1.65} & 27.53 & \textbf{1.66}
+      gemm & 91.6 
+      & 29.28 & \textbf{1.53} & 19.1 & 14.07 & \textbf{1.52} &  9.3 
+      & 39.04 & \textbf{1.73} & 22.6 & 31.99 & \textbf{1.71} & 18.7 
+      & 37.84 & \textbf{1.65} & 22.9 & 27.53 & \textbf{1.66} & 16.6
       \tabularnewline
       \rowcolor{Gray}
-      3mm & 120.2 & 17.11 & \textbf{1.45} & 12.06 & \textbf{1.43} & 16.55 & \textbf{1.75} & 11.85 & \textbf{1.74} & 17.06 & \textbf{1.66} & 11.74 & \textbf{1.62}
+      3mm & 120.2 
+      & 17.11 & \textbf{1.45} & 11.8 & 12.06 & \textbf{1.43} & 8.4
+      & 16.55 & \textbf{1.75} &  9.5 & 11.85 & \textbf{1.74} & 6.8
+      & 17.06 & \textbf{1.66} & 10.3 & 11.74 & \textbf{1.62} & 7.2
       \tabularnewline
-      2mm & 85.8 & 5.41 & \textbf{0.48} & 3.79 & \textbf{0.49} & 5.24 & \textbf{0.61} & 4.05 & \textbf{0.59} & 5.36 & \textbf{0.55} & 3.92 & \textbf{0.57}
-      \tabularnewline
-      \rowcolor{Gray}
-      correlation & 137.4 & 105.11 & \textbf{22.40} & 23.24 & \textbf{20.46} & 123.80 & \textbf{23.93} & 45.48 & \textbf{23.27} & 118.76 & \textbf{23.59} & 39.89 & \textbf{22.87}
-      \tabularnewline
-      covariance & 49.5 & 19.66 & \textbf{4.73} & 3.31 & 4.38 & 20.29 & \textbf{4.96} & 4.42 & 4.88 & 20.04 & \textbf{4.88} & 4.09 & 4.77
-      \tabularnewline
-      \rowcolor{Gray}
-      mvt & 1717.1 & 3.43 & \textbf{0.99} & 1.06 & \textbf{1.04} & 4.73 & \textbf{2.03} & 2.29 & \textbf{2.01} & 4.51 & \textbf{1.90} & 2.11 & \textbf{1.86}
-      \tabularnewline
-      gemver & 1717.4 & 3.65 & \textbf{1.51} & 1.24 & 1.65 & 7.89 & \textbf{4.92} & 5.33 & \textbf{4.86} & 5.24 & \textbf{3.21} & 2.70 & 3.17
+      2mm & 85.8 
+      & 5.41 & \textbf{0.48} & 11.3 &  3.79 & \textbf{0.49} & 7.7
+      & 5.24 & \textbf{0.61} &  8.6 &  4.05 & \textbf{0.59} & 6.9
+      & 5.36 & \textbf{0.55} &  9.7 &  3.92 & \textbf{0.57} & 6.9
       \tabularnewline
       \rowcolor{Gray}
-      jacobi-1d-imper & 152.6 & 27.55 & \textbf{11.95} & 25.98 & \textbf{11.00} & 261.77 & \textbf{69.98} & 260.01 & \textbf{70.08} & 88.99 & \textbf{69.69} & 88.59 & \textbf{69.93}
+      correlation & 137.4 
+      & 105.11 & \textbf{22.40} & 4.7 & 23.24 & \textbf{20.46} & 1.1 
+      & 123.80 & \textbf{23.93} & 5.2 & 45.48 & \textbf{23.27} & 2.0 
+      & 118.76 & \textbf{23.59} & 5.0 & 39.89 & \textbf{22.87} & 1.7
       \tabularnewline
-      doitgen & 512.5 & 13.07 & \textbf{6.19} & 8.64 & \textbf{6.08} & 13.32 & \textbf{10.22} & 12.42 & \textbf{9.75} & 13.46 & \textbf{7.23} & 12.54 & \textbf{7.11}
-      \tabularnewline
-      \rowcolor{Gray}
-      gramschmidt & 91.6 & 67.01 & \textbf{38.83} & 11.26 & \textbf{9.75} & 73.14 & \textbf{50.57} & 24.46 & 28.70 & 70.51 & \textbf{44.76} & 16.63 & 19.06
-      \tabularnewline
-      fdtd-2d & 1464.8 & 32.97 & \textbf{19.34} & 34.81 & \textbf{16.99} & 275.47 & \textbf{57.36} & 273.59 & \textbf{56.94} & 104.29 & \textbf{52.17} & 103.79 & \textbf{52.54}
-      \tabularnewline
-      \rowcolor{Gray}
-      syrk & 61.0 & 9.05 & \textbf{5.44} & 9.00 & \textbf{5.38} & 15.07 & \textbf{5.95} & 14.98 & \textbf{5.91} & 14.58 & \textbf{6.05} & 15.06 & \textbf{6.07}
-      \tabularnewline
-      jacobi-2d-imper & 976.6 & 18.72 & \textbf{12.07} & 18.17 & \textbf{8.95} & 179.64 & \textbf{62.25} & 179.59 & \textbf{62.06} & 59.55 & 60.10 & 61.03 & \textbf{59.97}
+      covariance & 49.5 
+      & 19.66 & \textbf{4.73} & 4.2 & 3.31 & 4.38 & 0.8
+      & 20.29 & \textbf{4.96} & 4.1 & 4.42 & 4.88 & 0.9
+      & 20.04 & \textbf{4.88} & 4.1 & 4.09 & 4.77 & 0.9
       \tabularnewline
       \rowcolor{Gray}
-      syr2k & 91.6 & 17.85 & \textbf{12.00} & 18.03 & \textbf{11.76} & 30.97 & \textbf{14.59} & 29.97 & \textbf{14.56} & 25.96 & \textbf{14.25} & 25.88 & \textbf{14.19}
+      mvt & 1717.1 
+      & 3.43 & \textbf{0.99} & 3.5 & 1.06 & \textbf{1.04} & 1.0
+      & 4.73 & \textbf{2.03} & 2.3 & 2.29 & \textbf{2.01} & 1.1
+      & 4.51 & \textbf{1.90} & 2.4 & 2.11 & \textbf{1.86} & 1.1
       \tabularnewline
-      symm & 91.6 & 49.55 & \textbf{34.24} & 9.82 & 11.45 & 65.07 & \textbf{44.49} & 41.38 & \textbf{38.88} & 64.42 & \textbf{43.96} & 37.79 & \textbf{23.50}
-      \tabularnewline
-      \rowcolor{Gray}
-      dynprog & 245.4 & 11.31 & \textbf{11.27} & 11.52 & 11.53 & 71.42 & 73.03 & 74.73 & 75.33 & 31.44 & 31.45 & 31.96 & \textbf{31.78}
-      \tabularnewline
-      durbin & 1526.2 & 1.73 & \textbf{1.72} & 0.50 & \textbf{0.50} & 4.02 & 4.02 & 2.84 & \textbf{2.82} & 2.63 & \textbf{2.61} & 1.30 & 1.31
-      \tabularnewline
-      \rowcolor{Gray}
-      seidel-2d & 190.7 & 25.06 & \textbf{25.06} & 24.54 & \textbf{24.52} & 31.26 & \textbf{31.18} & 31.02 & 31.11 & 25.08 & \textbf{25.06} & 25.07 & \textbf{25.06}
-      \tabularnewline
-      trisolv & 1716.8 & 0.15 & 0.15 & 0.17 & \textbf{0.17} & 0.30 & \textbf{0.30} & 0.30 & \textbf{0.30} & 0.30 & 0.30 & 0.30 & \textbf{0.30}
+      gemver & 1717.4 
+      & 3.65 & \textbf{1.51} & 2.4 & 1.24 & 1.65 & 0.75
+      & 7.89 & \textbf{4.92} & 1.6 & 5.33 & \textbf{4.86} & 1.1
+      & 5.24 & \textbf{3.21} & 1.6 & 2.70 & 3.17 & 0.85
       \tabularnewline
       \rowcolor{Gray}
-      cholesky & 122.1 & 11.98 & 12.98 & 11.86 & \textbf{10.77} & 18.79 & 20.47 & 18.51 & 19.41 & 17.66 & 20.38 & 17.23 & 18.52
+      jacobi-1d & 152.6 
+      & 27.55 & \textbf{11.95} & 2.3 & 25.98 & \textbf{11.00} & 2.4
+      & 261.77 & \textbf{69.98} & 3.7 & 260.01 & \textbf{70.08} & 3.7
+      & 88.99 & \textbf{69.69} & 1.3 & 88.59 & \textbf{69.93} & 1.3
       \tabularnewline
-      lu & 122.1 & 17.02 & 25.18 & 16.04 & 28.37 & 209.82 & \textbf{192.23} & 219.18 & \textbf{192.83} & 55.09 & 78.17 & 54.40 & 80.53
+      doitgen & 512.5 
+      & 13.07 & \textbf{6.19} & 2.1 & 8.64 & \textbf{6.08} & 1.4
+      & 13.32 & \textbf{10.22} & 1.3 & 12.42 & \textbf{9.75} & 1.3
+      & 13.46 & \textbf{7.23} & 1.4 & 12.54 & \textbf{7.11} & 1.8
       \tabularnewline
       \rowcolor{Gray}
-      reg\_detect & 381.6 & 30.13 & 52.15 & 28.67 & 51.01 & 331.21 & \textbf{118.99} & 327.65 & \textbf{118.87} & 93.30 & 118.60 & 92.55 & 118.44
+      gramschmidt & 91.6 
+      & 67.01 & \textbf{38.83} & 1.7 & 11.26 & \textbf{9.75} & 1.2
+      & 73.14 & \textbf{50.57} & 1.4 & 24.46 & 28.70 & 0.9
+      & 70.51 & \textbf{44.76} & 1.6 & 16.63 & 19.06 & 0.9
+      \tabularnewline
+      fdtd-2d & 1464.8 
+      & 32.97 & \textbf{19.34}  & 1.7 & 34.81  & \textbf{16.99} & 2.0
+      & 275.47 & \textbf{57.36} & 4.8 & 273.59 & \textbf{56.94} & 4.8 
+      & 104.29 & \textbf{52.17} & 2.0 & 103.79 & \textbf{52.54} & 2.0
+      \tabularnewline
+      \rowcolor{Gray}
+      syrk & 61.0 
+      & 9.05 & \textbf{5.44}  & 1.6 & 9.00 & \textbf{5.38}  & 2.0
+      & 15.07 & \textbf{5.95} & 2.5 & 14.98 & \textbf{5.91} & 2.5
+      & 14.58 & \textbf{6.05} & 2.4 & 15.06 & \textbf{6.07} & 2.5
+      \tabularnewline
+      jacobi-2d & 976.6 
+      & 18.72  & \textbf{12.07} & 1.5 & 18.17  & \textbf{8.95}  & 2.0 
+      & 179.64 & \textbf{62.25} & 2.8 & 179.59 & \textbf{62.06} & 2.9
+      & 59.55  & 60.10          & 1.0 & 61.03  & \textbf{59.97} & 1.0
+      \tabularnewline
+      \rowcolor{Gray}
+      syr2k & 91.6 
+      & 17.85 & \textbf{12.00} & 1.5 & 18.03 & \textbf{11.76} & 1.5
+      & 30.97 & \textbf{14.59} & 2.1 & 29.97 & \textbf{14.56} & 2.1
+      & 25.96 & \textbf{14.25} & 2.8 & 25.88 & \textbf{14.19} & 2.8
+      \tabularnewline
+      symm & 91.6 
+      & 49.55 & \textbf{34.24} & 1.4 & 9.82 & 11.45 & 0.9
+      & 65.07 & \textbf{44.49} & 1.5 & 41.38 & \textbf{38.88} & 1.1
+      & 64.42 & \textbf{43.96} & 1.5 & 37.79 & \textbf{23.50} & 1.6
+      \tabularnewline
+      \rowcolor{Gray}
+      dynprog & 245.4 
+      & 11.31 & \textbf{11.27} & 1.0 & 11.52 & 11.53          & 1.0
+      & 71.42 & 73.03          & 1.0 & 74.73 & 75.33          & 1.0
+      & 31.44 & 31.45          & 1.0 & 31.96 & \textbf{31.78} & 1.0
+      \tabularnewline
+      durbin & 1526.2 
+      & 1.73 & \textbf{1.72}  & 1.0 & 0.50 & \textbf{0.50} & 1.0
+      & 4.02 & 4.02           & 1.0 & 2.84 & \textbf{2.82} & 1.0
+      & 2.63 & \textbf{2.61}  & 1.0 & 1.30 & 1.31          & 1.0
+      \tabularnewline
+      \rowcolor{Gray}
+      seidel-2d & 190.7 
+      & 25.06 & \textbf{25.06} & 1.0 & 24.54 & \textbf{24.52} & 1.0
+      & 31.26 & \textbf{31.18} & 1.0 & 31.02 & 31.11          & 1.0
+      & 25.08 & \textbf{25.06} & 1.0 & 25.07 & \textbf{25.06} & 1.0
+      \tabularnewline
+      trisolv & 1716.8 
+      & 0.15 & 0.15          & 1.0 & 0.17 & \textbf{0.17} & 1.0
+      & 0.30 & \textbf{0.30} & 1.0 & 0.30 & \textbf{0.30} & 1.0 
+      & 0.30 & 0.30          & 1.0 & 0.30 & \textbf{0.30} & 1.0
+      \tabularnewline
+      \rowcolor{Gray}
+      cholesky & 122.1 
+      & 11.98 & 12.98 & 0.9 & 11.86 & \textbf{10.77} & 1.1
+      & 18.79 & 20.47 & 0.9 & 18.51 & 19.41          & 1.0
+      & 17.66 & 20.38 & 0.9 & 17.23 & 18.52 & 0.9
+      \tabularnewline
+      lu & 122.1 
+      & 17.02 & 25.18            & 0.7 & 16.04 & 28.37            & 0.6
+      & 209.82 & \textbf{192.23} & 1.1 & 219.18 & \textbf{192.83} & 1.1
+      & 55.09 & 78.17            & 0.7 & 54.40 & 80.53            & 0.7
+      \tabularnewline
+      \rowcolor{Gray}
+      reg\_detect & 381.6 
+      & 30.13 & 52.15 & 0.6 & 28.67 & 51.01 & 0.6
+      & 331.21 & \textbf{118.99} & 2.8 & 327.65 & \textbf{118.87} & 2.8
+      & 93.30 & 118.60 & 0.8 & 92.55 & 118.44 & 0.8
       \tabularnewline
     \end{tabular}
   \end{adjustbox}
