@@ -1,0 +1,28 @@
+%%
+\IEEEPARstart{N}{on-volatile} memory research began decades ago~\cite{wu1994envy}; recently it has accelerated with the April 2019 release of Intel released Optane\textsuperscript{\tiny TM} DC Persistent Memory (PMEM) in April 2019. Prior to availability, most work was done via emulation~\cite{wu1994envy,Maciejewski2017persistent,dulloor2014system,volos2015quartz,doudali2017comerge}.  We expected PMEM to exhibit lower bandwidth and higher latency compared to DRAM; work with PMEM is consistent with these expectations~\cite{gill2019single,izraelevitz2019basic}.  Yet we also note the actual performance story is more complex~\cite{peng2019system}. 
+%%
+
+%%
+We evaluated PMEM using \textit{Polybench}, a suite of well-known microbenchmarks used to evaluate optimization via memory locality.  Our preliminary results, shown in Figure \ref{fig:polybench} defied our prior emulation study~\cite{doudali2017comerge}.  We investigated this behavior to better understand the performance profile of PMEM; we confirmed that locality is critical and identified multiple ways in which locality manifests itself in current PMEM systems, of which we evaluated multiple.
+%%
+
+%%
+Our observations are that the most profound effect of locality is related to default memory management policy, with secondary effects from the PMEM memory controller's use of striping, read-ahead, and write-behind caching.  Linux default memory management policy is to use the largest possible pages for PMEM, while it defaults to 4KB pages for DRAM.  DAX-aware file systems (for application sharing, dynamic allocation, and security) interact with this policy as well.  Because the impact of this is so large, anyone publishing evaluations of PMEM should describe how they controlled for page size. PMEM striping primarily benefits workloads with good data locality (within the stripe size) and high bandwidth requirements.  PMEM without striping often performs similarly when high bandwidth is less critical.  PMEM caching in the memory controller and memory modules is more beneficial for CPUs with smaller caches.  Once we controlled for page size and applied memory locality optimizing tools, we found performance for PMEM much closer to expectations; such performance is from careful optimization and \textit{not} using the default configuration.
+%%
+
+\begin{figure}[!hb]
+    \captionsetup{justification=centering}
+    \centering
+    \caption{Polybench: Performance of Striped PMEM relative to DRAM, Linux 5.0 kernel.  Better than expected performance versus DRAM unexpected (tests in bold exhibit better PMEM performance than DRAM).}
+    \vspace{0.1cm}
+    \label{fig:polybench}
+    \begin{tabular}{c}
+        \includegraphics[width=0.495\textwidth]{pbfig-dec2019.eps}
+    \end{tabular}
+\end{figure}
+
+%\hfill mds
+ 
+%\hfill \today % \ada{why the hfill and date?}
+% this is from the original IEEE template.
+

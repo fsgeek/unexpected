@@ -1,0 +1,137 @@
+%\input{gramschmidt-mem-fig}
+%\input{combined-fig.tex}
+
+
+\begin{figure}[!th]
+  \captionsetup{justification=centering}
+  \centering
+  \caption{Polybench: DRAM vs Interleaved PMEM (both 4K pages).  Results closer to expectations but still better than expected.  Caching masks lower bandwidth of PMEM; memory usage optimization improves cache benefits which improves performance and decreases benefit of PMEM interleaving.}
+  \vspace{2mm}
+  \label{fig:polybench:dram-vs-ipmem-4k}
+  \begin{tabular}{c}
+    \includegraphics[width=0.45\textwidth]{pb-4k-DRAM-4K-iPMEM.eps}
+  \end{tabular}
+\end{figure}
+
+
+%%
+PMEM's AppDirect mode permits two types of direct-access (DAX) usage: \textit{devdax} access, which provides raw PMEM that is memory mapped by an application for exclusive use; this model requires pre-selecting memory allocation units (4KB, 2MB, and 1GB), static partitioning of the overall memory, using the "ndctl" utility, and is restricted to privileged applications; and \textit{fsdax} access, which uses a DAX-aware file system to provide support for sharing between multiple applications, dynamic memory allocation --- including page alignment and allocation unit size, and multi-user security.  When an application memory maps a file on a DAX-aware file system the operating system configures the process page tables to directly reference the physical addresses of the underlying PMEM.  Preferred practice is to use a DAX-aware file system~\cite{rudoff2019NVMProgrammingModel}.
+%%
+
+
+%%
+The Persistent Memory Development Kit (PMDK) includes libraries for transparently converting standard memory allocation calls (e.g., \textit{malloc}) to a memory allocator using arenas backed directly by files on a DAX filesystem device.  This is similar to the approach used by \textit{hugetlbfs}, a Linux file sytem that exposes DRAM to applications for allocation against large pages --- the standard malloc calls in that case are implemented using arenas backed directly by files on hugetlbfs.  We use both of these mechanisms in our evaluation of the Polybench tests.
+%%
+
+%%
+Our PMEM hardware uses two dedicates memory controllers per CPU; each memory controller has three channels, each channel can manage two PMEM modules, which are equivalent to DRAM DIMM packages.   The memory controllers include a small cache memory and provide the ability to transparently stripe across the PMEM modules although non-interleaved access is also supported.  Each PMEM module also contains memory for converting 64 byte cache line sized load/store operations into 256 byte PMEM block size load/store operations.
+%%
+
+%%
+The Linux operating system includes native support for PMEM; the policies of Linux differ for PMEM than they do for DRAM, however.  For example, the current Linux kernel will transparently use large memory page mappings whenever possible, as dictated by the alignment and length of the page mappings.  The most recent version of Linux (which is 5.3 as of this writing) will use 1GB, 2MB, or 4KB page sizes when setting up page tables for running processes; earlier versions only used 2MB or 4KB pages. We note that large page performance impact is well-described in the literature~\cite{agarwal2017thermostat,panwar2018making}.  Thus, PMEM and DRAM default to different behaviors without  intervention to modify standard policies.
+%%
+
+%%
+We evaluated three different DAX-aware file systems: ext and xfs, which are standard Linux file systems incorporating experimental DAX support, and NOVA. The NOVA file system was the first purpose-built file system for PMEM~\cite{xu2016nova}.  However, we found NOVA unsuitable for use as a DAX file system because its storage allocation policy does not preserve the 2MB page alignment the OS requires to provide large page support; this is not reported in even recent literature~\cite{izraelevitz2019basic,yang2019empirical}. Initially, we had not expected our choice of DAX-aware file systems to be relevant, as once memory mapped, the PMEM is directly accessed by the application.  As a result of our discovery, our evaluation in this paper uses ext4, which did not exhibit the behavior observed with NOVA.
+%%
+
+
+%%
+The Polybench test suite is a set of 30 computational kernels drawn from several different domains and is commonly used for evaluating the impact of memory performance with respect to those tasks. We previously used Polybench~\cite{doudali2017comerge} and Polybench continues to be actively used for evaluating memory optimizers.
+%%
+
+\begin{figure}[!bh]
+  \captionsetup{justification=centering}
+  \centering
+  \caption{Polybench: Cases where PMEM (non-interleaved PMEM) faster than iPMEM (interleaved PMEM) --- interleaving does \textit{not} provide substantial benefit in these cases; surprising because we expect the 2MB page size to dominate (versus the 24KB stripe size of interleaved PMEM).}
+  \vspace{2mm}
+  \label{fig:polybench:PMEM-vs-ipmem}
+  \begin{tabular}{c}
+    \includegraphics[width=0.45\textwidth]{pb-2M-PMEM-2MB-iPMEM-non-interleaved-faster.eps}
+  \end{tabular}
+\end{figure}
+
+
+
+% Need to define this somewhere
+\definecolor{Gray}{gray}{0.9}
+\begin{table*}[!hb]
+	\caption{Polybench Test Results: data size, by memory type (DRAM, PMEM, iPMEM), page size (4K, 2M), and optimization.  Execution time in seconds; sorted by 4K DRAM time improvement. Only shows test where polyhedral optimization benefitted at least one memory configuration; other results omitted. Memory locality impact differs across memory types and configurations. CPU and memory allocation are bound to the same NUMA node.}
+	\label{table:poly2}
+  \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{r|S|SS|SS|SS|SS|SS|SS}
+      \multicolumn{1}{c}{Test} &
+      \multicolumn{1}{c}{Data} &
+      \multicolumn{4}{c}{DRAM} &
+      \multicolumn{4}{c}{PMEM} &
+      \multicolumn{4}{c}{iPMEM}
+      \tabularnewline
+      & \multicolumn{1}{c|}{Size} & 
+      \multicolumn{2}{c}{4K} &
+      \multicolumn{2}{c}{2M} &
+      \multicolumn{2}{c}{4K} &
+      \multicolumn{2}{c}{2M} &
+      \multicolumn{2}{c}{4K} &
+      \multicolumn{2}{c}{2M}
+      \tabularnewline
+        & {MB}& {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly} & {Opt} & {Poly}
+      \tabularnewline
+      \hline
+      gemm & 91.6 & 29.28 & \textbf{1.53} & 14.07 & \textbf{1.52} & 39.04 & \textbf{1.73} & 31.99 & \textbf{1.71} & 37.84 & \textbf{1.65} & 27.53 & \textbf{1.66}
+      \tabularnewline
+      \rowcolor{Gray}
+      3mm & 120.2 & 17.11 & \textbf{1.45} & 12.06 & \textbf{1.43} & 16.55 & \textbf{1.75} & 11.85 & \textbf{1.74} & 17.06 & \textbf{1.66} & 11.74 & \textbf{1.62}
+      \tabularnewline
+      2mm & 85.8 & 5.41 & \textbf{0.48} & 3.79 & \textbf{0.49} & 5.24 & \textbf{0.61} & 4.05 & \textbf{0.59} & 5.36 & \textbf{0.55} & 3.92 & \textbf{0.57}
+      \tabularnewline
+      \rowcolor{Gray}
+      correlation & 137.4 & 105.11 & \textbf{22.40} & 23.24 & \textbf{20.46} & 123.80 & \textbf{23.93} & 45.48 & \textbf{23.27} & 118.76 & \textbf{23.59} & 39.89 & \textbf{22.87}
+      \tabularnewline
+      covariance & 49.5 & 19.66 & \textbf{4.73} & 3.31 & 4.38 & 20.29 & \textbf{4.96} & 4.42 & 4.88 & 20.04 & \textbf{4.88} & 4.09 & 4.77
+      \tabularnewline
+      \rowcolor{Gray}
+      mvt & 1717.1 & 3.43 & \textbf{0.99} & 1.06 & \textbf{1.04} & 4.73 & \textbf{2.03} & 2.29 & \textbf{2.01} & 4.51 & \textbf{1.90} & 2.11 & \textbf{1.86}
+      \tabularnewline
+      gemver & 1717.4 & 3.65 & \textbf{1.51} & 1.24 & 1.65 & 7.89 & \textbf{4.92} & 5.33 & \textbf{4.86} & 5.24 & \textbf{3.21} & 2.70 & 3.17
+      \tabularnewline
+      \rowcolor{Gray}
+      jacobi-1d-imper & 152.6 & 27.55 & \textbf{11.95} & 25.98 & \textbf{11.00} & 261.77 & \textbf{69.98} & 260.01 & \textbf{70.08} & 88.99 & \textbf{69.69} & 88.59 & \textbf{69.93}
+      \tabularnewline
+      doitgen & 512.5 & 13.07 & \textbf{6.19} & 8.64 & \textbf{6.08} & 13.32 & \textbf{10.22} & 12.42 & \textbf{9.75} & 13.46 & \textbf{7.23} & 12.54 & \textbf{7.11}
+      \tabularnewline
+      \rowcolor{Gray}
+      gramschmidt & 91.6 & 67.01 & \textbf{38.83} & 11.26 & \textbf{9.75} & 73.14 & \textbf{50.57} & 24.46 & 28.70 & 70.51 & \textbf{44.76} & 16.63 & 19.06
+      \tabularnewline
+      fdtd-2d & 1464.8 & 32.97 & \textbf{19.34} & 34.81 & \textbf{16.99} & 275.47 & \textbf{57.36} & 273.59 & \textbf{56.94} & 104.29 & \textbf{52.17} & 103.79 & \textbf{52.54}
+      \tabularnewline
+      \rowcolor{Gray}
+      syrk & 61.0 & 9.05 & \textbf{5.44} & 9.00 & \textbf{5.38} & 15.07 & \textbf{5.95} & 14.98 & \textbf{5.91} & 14.58 & \textbf{6.05} & 15.06 & \textbf{6.07}
+      \tabularnewline
+      jacobi-2d-imper & 976.6 & 18.72 & \textbf{12.07} & 18.17 & \textbf{8.95} & 179.64 & \textbf{62.25} & 179.59 & \textbf{62.06} & 59.55 & 60.10 & 61.03 & \textbf{59.97}
+      \tabularnewline
+      \rowcolor{Gray}
+      syr2k & 91.6 & 17.85 & \textbf{12.00} & 18.03 & \textbf{11.76} & 30.97 & \textbf{14.59} & 29.97 & \textbf{14.56} & 25.96 & \textbf{14.25} & 25.88 & \textbf{14.19}
+      \tabularnewline
+      symm & 91.6 & 49.55 & \textbf{34.24} & 9.82 & 11.45 & 65.07 & \textbf{44.49} & 41.38 & \textbf{38.88} & 64.42 & \textbf{43.96} & 37.79 & \textbf{23.50}
+      \tabularnewline
+      \rowcolor{Gray}
+      dynprog & 245.4 & 11.31 & \textbf{11.27} & 11.52 & 11.53 & 71.42 & 73.03 & 74.73 & 75.33 & 31.44 & 31.45 & 31.96 & \textbf{31.78}
+      \tabularnewline
+      durbin & 1526.2 & 1.73 & \textbf{1.72} & 0.50 & \textbf{0.50} & 4.02 & 4.02 & 2.84 & \textbf{2.82} & 2.63 & \textbf{2.61} & 1.30 & 1.31
+      \tabularnewline
+      \rowcolor{Gray}
+      seidel-2d & 190.7 & 25.06 & \textbf{25.06} & 24.54 & \textbf{24.52} & 31.26 & \textbf{31.18} & 31.02 & 31.11 & 25.08 & \textbf{25.06} & 25.07 & \textbf{25.06}
+      \tabularnewline
+      trisolv & 1716.8 & 0.15 & 0.15 & 0.17 & \textbf{0.17} & 0.30 & \textbf{0.30} & 0.30 & \textbf{0.30} & 0.30 & 0.30 & 0.30 & \textbf{0.30}
+      \tabularnewline
+      \rowcolor{Gray}
+      cholesky & 122.1 & 11.98 & 12.98 & 11.86 & \textbf{10.77} & 18.79 & 20.47 & 18.51 & 19.41 & 17.66 & 20.38 & 17.23 & 18.52
+      \tabularnewline
+      lu & 122.1 & 17.02 & 25.18 & 16.04 & 28.37 & 209.82 & \textbf{192.23} & 219.18 & \textbf{192.83} & 55.09 & 78.17 & 54.40 & 80.53
+      \tabularnewline
+      \rowcolor{Gray}
+      reg\_detect & 381.6 & 30.13 & 52.15 & 28.67 & 51.01 & 331.21 & \textbf{118.99} & 327.65 & \textbf{118.87} & 93.30 & 118.60 & 92.55 & 118.44
+      \tabularnewline
+    \end{tabular}
+  \end{adjustbox}
+\end{table*}
