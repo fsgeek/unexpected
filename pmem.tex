@@ -508,7 +508,7 @@ DC Persistent Memory}}
 \IEEEtitleabstractindextext{%
 \begin{abstract}
   %%
-  We evaluated Intel\textsuperscript{\textregistered} Optane\textsuperscript{\tiny TM} DC Persistent Memory and found surprising behavior not discussed in prior work.  In particular, we found that the Linux persistent memory (PMEM) support automatically maps persistent memory in large pages.  The effect of large pages for PMEM and small pages for DRAM is enormous, dwarfing other effects discussed in the literature.  Using the \textit{Polybench} high-performance computing benchmark suite and controlling for mapped page size, we evaluate PMEM performance relative to DRAM.  We find that Intel's persistent memory is highly sensitive to data locality, size, and access patterns, which becomes clearer by optimizing both virtual memory page size and optimizing locality for data layout.  We found PMEM performance comparable to DRAM performance for a number of tests, and significant performance improvements when optimized for data locality.
+  We evaluated Intel\textsuperscript{\textregistered} Optane\textsuperscript{\tiny TM} DC Persistent Memory and found surprising behavior not discussed in prior work.  In particular, we found that the Linux persistent memory (PMEM) support automatically maps persistent memory in large pages.  The effect of large pages for PMEM and small pages for DRAM is enormous, dwarfing other effects discussed in the literature.  Using the \textit{Polybench} high-performance computing benchmark suite and controlling for mapped page size, we evaluate PMEM performance relative to DRAM.  We find that Intel's persistent memory is highly sensitive to data locality, size, and access patterns, which becomes clearer by optimizing both virtual memory page size and optimizing locality for data layout.  We found PMEM performance comparable to DRAM performance for a number of tests and significant performance improvements when optimized for data locality.
   %%  
 \end{abstract}
 
@@ -709,7 +709,7 @@ Our results suggest a number of areas for future work: (1) we need to evaluate t
 \section{Conclusion}
 
 %%
-We found PMEM is more sensitive to memory locality than DRAM; this is due to differences in the hardware implementing these memory technologies.  The decision to default PMEM to large pages provides a substantial boost in page locality.  As datasets grow in size, using large pages yields better TLB locality because more actual PMEM can be described with a fixed number of TLB entries.  PMEM's support for interleaving is most beneficial for data with both good locality and high bandwidth requirements; non-interleaved PMEM works comparably well to iPMEM with good data locality and moderate bandwidth requirements, such as with CPUs employing larger caches.
+We found PMEM is more sensitive to memory locality than DRAM; this is due to differences in the hardware implementing these memory technologies.  The decision to default PMEM to large pages provides a substantial boost in page locality.  As datasets grow in size, using large pages yields better TLB locality because more actual PMEM can be described with a fixed number of TLB entries.  PMEM's support for interleaving is most beneficial for data with both good locality and high bandwidth requirements; non-interleaved PMEM works comparably well to interleaved PMEM with good data locality and moderate bandwidth requirements, such as with CPUs employing larger caches.
 %%
 
 %%
