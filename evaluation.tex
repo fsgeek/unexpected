@@ -1,31 +1,6 @@
-\ada{I prefer it when the evaluation is presented in present tense
-  (except for when mentioning prior results). I do like the past tense
-in the abstract of this paper, so maybe it will be weird to switch to
-present tense. }
-
-\begin{figure*}[!th]
-  \captionsetup{justification=centering}
-  \centering
-  \caption{Polyhedral Memory optimizations for interleaved PMEM, 4K and 2M pages.  Varying cache layers impact performance differently. Results sorted by execution time without polyhedral optimization (\texttt{-polly} option to clang); boldface for improved poly performance.}
-  \vspace{0.1cm}
-  \label{fig:polybench:all:time}
-  \begin{tabular}{cc}
-    \includegraphics[width=0.45\textwidth]{pb-2M-iPMEM-poly-2M-iPMEM.eps} &
-    \includegraphics[width=0.45\textwidth]{pb-4K-iPMEM-poly-4K-iPMEM.eps}
-  \end{tabular}
-\end{figure*}
-
-
-%\input{appendix/polybench/aep/figures/tex/covariance-figure.tex}
-%\input{appendix/polybench/aep/figures/tex/symm-figure.tex}
-%\input{appendix/polybench/aep/figures/tex/lu-figure.tex}
-%\input{appendix/polybench/aep/figures/tex/gemm-figure.tex}
 
 %%
-% We used the following tools for our evaluation: \textit{Polybench} 3.2~\cite{polybench,yuki2014understanding,yuki2015polybench}, a suite of benchmarks commonly used to evaluate memory and processor intensive workloads across a range of domains, and LLVM 10.0 --- specifically the clang compiler and polly polyhedral optimizations.
-
-%%
-Our evaluation system is a dual socket NUMA architecture system, using two Intel\textsuperscript{\textregistered} second generation Xeon\textsuperscript{\textregistered} Scalable processors (codename \textit{Cascade Lake}) running between 1.0GHz and 3.9GHz (variable) with 1.3MB L1 caches, 40MB L2 caches, and a 55MB L3 cache, 20 cores per processor, and 12 memory slots per processor, with six 32GB DRAM modules and six 256GB PMEM modules, all running at 2666MT/s. Each processor has two persistent memory controllers, with three channels per controller.  Each channel managed two PMEM modules; Intel refers to this as the 2-2-2 configuration~\cite{intel2019quickstart}. We found similar results on the same base system with different model Intel CPUs: 1-3.7GHz (variable), 32KB L1, 1MB L2, 32MB L3 caches.
+Our evaluation system is a dual socket NUMA architecture system, using two Intel\textsuperscript{\textregistered} second generation Xeon\textsuperscript{\textregistered} Scalable processors (codename \textit{Cascade Lake}) running between 1.0GHz and 3.9GHz (variable) with 32KB L1 instruction and data caches, 1MB L2 caches, and a 55MB L3 cache, 20 cores per processor, and 12 memory slots per processor, with six 32GB DRAM modules and six 256GB PMEM modules, all running at 2666 Memory Transactions per second (MT/s). Each processor has two persistent memory controllers, with three channels per controller.  Each channel manages two PMEM modules; Intel refers to this as the 2-2-2 configuration~\cite{intel2019quickstart}. We found similar results on the same base system with different model Intel CPUs: 1-3.7GHz (variable), 32KB L1, 1MB L2, 32MB L3 caches.
 %%
 
 %%
@@ -34,32 +9,38 @@ We used Fedora 31 with Linux kernel 5.0.0, which includes native PMEM support. W
 
 
 %%
-We used Polybench/C Version 3.2~\cite{polybench,yuki2014understanding,yuki2015polybench} compiled with clang version 10.0.0, choosing compile time constants to report execution time and the Linux real-time scheduler, and using maximum (\texttt{-O3}) optimization. We tested both with (\texttt{--llvm -polly}) and without polyhedral optimization. We choose our dataset sizes to match our prior work~\cite{doudali2017comerge}.  We ran the single-threaded Polybench 3.2 tests serially, bound to a single core, and all memory, including PMEM, was allocated from memory local to the NUMA node of that core.  We used the PMDK allocator to redirect standard memory allocation calls to use memory mapped PMEM, via the DAX aware file system.  The PMDK uses a jemalloc-based memory allocator.
+We used Polybench/C Version 3.2~\cite{polybench,yuki2014understanding,yuki2015polybench} compiled with clang version 10.0.0, choosing compile time constants to report execution time and the Linux real-time scheduler, and using maximum (\texttt{-O3}) optimization. We tested both with (\texttt{--llvm -polly}) and without polyhedral optimization. We chose our dataset sizes to match our prior work~\cite{doudali2017comerge}.  We ran the single-threaded Polybench 3.2 tests serially, bound to a single core, and all memory, including PMEM, was allocated from memory local to the NUMA node of that core.  We used the PMDK allocator to redirect standard memory allocation calls to use memory mapped PMEM, via the DAX aware file system.  The PMDK uses a jemalloc-based memory allocator.
 %%
 
 %%
-Figure \ref{fig:polybench} reproduces our initial results, using the ext4 file system properly configured to use aligned 2MB pages.  These initial results surprised us because they showed better performance than we expected.  We determined that while the default behavior for Linux is to use 4KB TLB mappings for DRAM, it used 2MB TLB mappings for PMEM when possible. Indeed, this behavior of Linux has changed; as of Linux 5.3 it now uses the largest possible TLB mapping for PMEM between 1GB, 2MB, and 4KB, based upon the alignment and length of the memory region being accessed.  This behavior has not previously been reported in the literature, despite its substantial impact on performance.  We counted the number of TLB and last level cache misses when forcing different page sizes; it accounts for all of the performance difference. Recent work has alluded to the 2MB page impact, but fails to explain why this occurs~\cite{kadekodi2019splitfs}, while other recent work fails to address it, despite the profound impact it has on performance for larger workloads~\cite{dong2019performance,peng2019system}. We note that NOVA, which was designed for PMEM and is the \textit{de facto} standard for PMEM-optimized file systems interacts poorly with the page-size needs of applications converted to use PMEM, because it mixes 4KB and 2MB page allocations internally.  Over time this leads to fragmentation, which causes the performance degradation we observed.  Thus, we subsequently switched to using ext4, which did not exhibit the performance degradation.
+Figure \ref{fig:polybench} reproduces our initial results, using the ext4 file system properly configured to use aligned 2MB pages.  These initial results surprised us because they showed better performance than we expected.  We determined that while the default behavior for Linux is to use 4KB TLB mappings for DRAM, it used 2MB TLB mappings for PMEM when possible. Indeed, this behavior of Linux has changed; as of Linux 5.3 it now uses the largest possible TLB mapping for PMEM between 1GB, 2MB, and 4KB, based upon the alignment and length of the memory region being accessed.  \textbf{This behavior has not previously been reported in the literature, despite its substantial impact on performance.}  We counted the number of TLB and last level cache misses when forcing different page sizes; it accounts for all of the performance difference. Recent work has alluded to the 2MB page impact, but does not explain why this occurs~\cite{kadekodi2019splitfs}, while other recent work does not address it, despite the up to 5x impact we have observed on performance~\cite{dong2019performance,peng2019system}. We note that NOVA, which was designed for PMEM and is the \textit{de facto} standard for PMEM-optimized file systems interacts poorly with the page-size needs of applications converted to use PMEM, because it mixes 4KB and 2MB page allocations internally.  Over time this leads to fragmentation, which causes the performance degradation we observed.  Thus, we subsequently switched to using ext4, configured to ensure 2MB aligned allocation.  This did not exhibit the performance degradation.
 %%
 
 %%
-We used \texttt{perf}, a standard Linux performance utility, for measuring processor performance.  From perf, we identified dramatically different data TLB miss rates, which in turn led us to finding both the default behavior of Linux and the sensitivity of page locality to DAX file system allocation policy.  \textbf{OS implementers make fundamental decisions we must understand to achieve good performance.} Further, these choices do change over time.
+We used \texttt{perf}, a standard Linux performance utility, for measuring processor performance.  From perf, we identified dramatically different data TLB miss rates, which in turn led us to finding both the default behavior of Linux and the sensitivity of page locality to the DAX file system allocation policy.  \textbf{OS developers make fundamental decisions we must understand to achieve good performance.} Further, these choices do change over time.
 %%
 
 %%
-We used \texttt{AEPWatch}, an open source Intel utility~\cite{IntelAEPWatch}, for measuring the performance behavior of the persistent memory controllers. Once we controlled for page size, this provided us with greater insight into the impact of read caching, write combining, and striping in the persistent memory controllers.  We found that \textbf{no single configuration produced consistently best performance.}  We will explore this further in future work.
+We used \texttt{AEPWatch}, an open source Intel utility~\cite{IntelAEPWatch}, for measuring the performance behavior of the persistent memory controllers. Once we controlled for page size, this provided us with greater insight into the impact of read caching, write combining, and striping in the persistent memory controllers.  We found that \textbf{no single configuration produced consistently best performance.} 
 %%
 
 %%
-We hypothesized that software memory locality techniques would also yield improved performance.  To test this, we used the LLVM compiler tools, which include a polyhedral memory optimizer. The memory optimizer optimizes memory layout and code generation to improve data locality; Polybench was constructed to evaluate the effectiveness of polyhedral optimization.  In Table \ref{table:poly2} we show our results across DRAM, (non-interleaved) PMEM, and (interleaved) iPMEM, for both 4KB and 2MB page sizes.  Most PMEM configurations benefitted from polyhedral optimization, which reflects the sensitivity of the system to locality. We found that non-interleaved PMEM benefitted most from polyhedral optimization, often exhibiting comparable performance to interleaved PMEM.  In only two cases did PMEM exhibit better performance than DRAM, likely due to the additional caching in the PMEM system itself. We omit results for eight tests where no memory configuration benefitted from polyhedral optimization. We will explore how to improve the polyhedral optimizer for use with persistent memory in future work.
+We hypothesized that software memory locality techniques would also yield improved performance.  To test this, we used the LLVM compiler tools, which include a polyhedral memory optimizer. The memory optimizer optimizes memory layout and code generation to improve data locality; Polybench was constructed to evaluate the effectiveness of polyhedral optimization.  In Table \ref{table:poly2} we show our results across DRAM, (non-interleaved) PMEM, and (interleaved) iPMEM, for both 4KB and 2MB page sizes.  Most PMEM configurations benefitted from polyhedral optimization, which reflects the sensitivity of the system to locality. We found that non-interleaved PMEM benefitted most from polyhedral optimization, often exhibiting comparable performance to interleaved PMEM.  In only two cases did PMEM exhibit better performance than DRAM, likely due to the additional caching in the PMEM system itself. We omit results for eight tests where no memory configuration benefitted from polyhedral optimization.
 %%
 
 %%
-Figure \ref{fig:polybench:dram-vs-ipmem-4k} was a fairer comparison of memory performance and a clear indication on the importance of locality.  We evaluated the impact of polyhedral memory optimization to corroborate our theory on the importance of data locality.  Figure \ref{fig:polybench:PMEM-vs-ipmem} was surprising to us because it suggested that locality was a more important factor than memory striping. Figure \ref{fig:polybench:all:time} demonstrated that in many cases polyhedral memory optimization improved data locality by as much as 80\%.  Table \ref{table:poly2} provides the specific timings for the 22 tests where polyhedral optimization improved performance for at least one memory type.  However, we were unable to identify any single factor that explained these exact results: we considered both data and instruction TLB miss rates, last level cache misses, data set sizes, and instruction counts. We suspect this is due to the generic nature of the polyhedral optimizer, which has no specific knowledge of the processor or memory characteristics on our test system; it is also possible there are secondary features within the PMEM itself that, while not exposed, impact this.  We will explore providing additional guidance for optimization in future work.
-
-\begin{comment}
+Figure \ref{fig:polybench:dram-vs-ipmem-4k} was a fairer comparison of memory performance and a clear indication on the importance of locality.  We evaluated the impact of polyhedral memory optimization to corroborate our theory on the importance of data locality.  Figure \ref{fig:polybench:PMEM-vs-ipmem} suggested that locality was a more important factor than memory striping. Figure \ref{fig:polybench:all:time} demonstrated that in many cases polyhedral memory optimization improved data locality by as much as 80\%.  Table \ref{table:poly2} provides the specific timings for the 22 tests where polyhedral optimization improved performance for at least one memory type.  However, we were unable to identify any single factor that explained these exact results: we considered both data and instruction TLB miss rates, last level cache misses, data set sizes, and instruction counts. We suspect this is due to the generic nature of the polyhedral optimizer, which has no specific knowledge of the processor or memory characteristics on our test system; it is also possible there are secondary features within the PMEM itself that, while not exposed, impact this. 
 %%
-While prior work~\cite{yang2019empirical} combined these behaviors into a single measure (Effective Write Ration -- ``EWR'') our evaluation suggests that the performance profile is more nuanced than captured by this single ratio. Thus, we expect systems using PMEM will require workload specific evaluation across the range of configuration options to optimize performance.
-%%
-\end{comment}
 
+\begin{figure*}[!th]
+  \captionsetup{justification=centering}
+  \centering
+  \caption{Polyhedral Memory optimizations for interleaved PMEM (iPMEM), 4K and 2M pages.  Varying cache layers impact performance differently. Results sorted by execution time without polyhedral optimization. Boldface indicates improvement with poly optimization.}
+  \vspace{0.1cm}
+  \label{fig:polybench:all:time}
+  \begin{tabular}{cc}
+    \includegraphics[width=0.45\textwidth]{pb-4K-iPMEM-poly-4K-iPMEM.eps} &
+    \includegraphics[width=0.45\textwidth]{pb-2M-iPMEM-poly-2M-iPMEM.eps} 
+  \end{tabular}
+\end{figure*}
 

@@ -1,6 +1,3 @@
-%\input{gramschmidt-mem-fig}
-%\input{combined-fig.tex}
-
 
 \begin{figure}[!th]
   \captionsetup{justification=centering}
@@ -15,7 +12,7 @@
 
 
 %%
-PMEM's AppDirect mode permits two types of direct-access (DAX) usage: \textit{devdax} access, which provides raw PMEM that is memory mapped by an application for exclusive use; this model requires pre-selecting memory allocation units (4KB, 2MB, and 1GB), static partitioning of the overall memory, using the "ndctl" utility, and is restricted to privileged applications; and \textit{fsdax} access, which uses a DAX-aware file system to provide support for sharing between multiple applications, dynamic memory allocation --- including page alignment and allocation unit size, and multi-user security.  When an application memory maps a file on a DAX-aware file system the operating system configures the process page tables to directly reference the physical addresses of the underlying PMEM.  Preferred practice is to use a DAX-aware file system~\cite{rudoff2019NVMProgrammingModel}.
+PMEM's AppDirect mode permits two types of direct-access (DAX) usage: \textit{devdax} access, which provides raw PMEM that is memory mapped by an application for exclusive use. Devdax mode requires pre-selecting memory allocation units (4KB, 2MB, and 1GB), static partitioning of the overall memory, using the ``ndctl'' utility, and is restricted to privileged applications; and \textit{fsdax} access, which uses a DAX-aware file system to provide support for sharing between multiple applications, dynamic memory allocation --- including page alignment and allocation unit size, and multi-user security.  When an application memory maps a file on a DAX-aware file system the operating system configures the process page tables to directly reference the physical addresses of the underlying PMEM.  Preferred practice is to use a DAX-aware file system~\cite{rudoff2019NVMProgrammingModel}.
 %%
 
 
@@ -28,22 +25,18 @@ Our PMEM hardware uses two dedicated memory controllers per CPU; each memory con
 %%
 
 %%
-The Linux operating system includes native support for PMEM; the policies of Linux differ for PMEM than they do for DRAM, however.  For example, the current Linux kernel will transparently use large memory page mappings whenever possible, as dictated by the alignment and length of the page mappings.  The most recent version of Linux (which is 5.3 as of this writing) will use 1GB, 2MB, or 4KB page sizes when setting up page tables for running processes; earlier versions only used 2MB or 4KB pages. We note that large page performance impact is well-described in the literature~\cite{agarwal2017thermostat,panwar2018making}.  Thus, PMEM and DRAM default to different behaviors without  intervention to modify standard policies.
+The Linux operating system includes native support for PMEM.  However, the policies for PMEM differ from the ones for DRAM. The Linux kernel transparently uses large memory page mappings for PMEM whenever possible, as dictated by the alignment and length of the page mappings.  Linux version 5.3 uses 1GB, 2MB, or 4KB page sizes for PMEM when setting up page tables for running processes.  Earlier Linux versions only used 2MB or 4KB pages for PMEM. The default for DRAM remains 4KB.  We note that large page performance impact is well-described in the literature~\cite{agarwal2017thermostat,panwar2018making}.  While Linux behavior can be tuned, because default page sizes differ for PMEM and DRAM, it can create significant performance differences --- we observed up to 5x difference.
 %%
+
 
 %%
 We evaluated three different DAX-aware file systems: ext and xfs, which are standard Linux file systems incorporating experimental DAX support, and NOVA. The NOVA file system was the first purpose-built file system for PMEM~\cite{xu2016nova}.  However, we found NOVA unsuitable for use as a DAX file system, because its storage allocation policy does not preserve the 2MB page alignment the OS requires to provide large page support; this is not reported in even recent literature~\cite{izraelevitz2019basic,yang2019empirical}. Initially, we had not expected our choice of DAX-aware file systems to be relevant, as once memory mapped, the PMEM is directly accessed by the application.  As a result of our discovery, our evaluation in this paper uses ext4, which did not exhibit the behavior observed with NOVA.
 %%
 
-
-%%
-The Polybench test suite is a set of 30 computational kernels drawn from several different domains and is commonly used for evaluating the impact of memory performance with respect to those tasks. We previously used Polybench~\cite{doudali2017comerge}, and Polybench continues to be actively used for evaluating memory optimizer performance.
-%%
-
-\begin{figure}[!bh]
+\begin{figure}[!b]
   \captionsetup{justification=centering}
   \centering
-  \caption{Polybench: Cases where PMEM (non-interleaved PMEM) faster than iPMEM (interleaved PMEM) --- interleaving does \textit{not} provide substantial benefit in these cases; surprising because we expect the 2MB page size to dominate (versus the 24KB stripe size of interleaved PMEM).}
+  \caption{Polybench: Cases where PMEM (non-interleaved PMEM) faster than iPMEM (interleaved PMEM) --- interleaving does \textit{not} provide substantial benefit in these cases; surprising because we expect the 2MB page size to dominate.}
   \vspace{2mm}
   \label{fig:polybench:PMEM-vs-ipmem}
   \begin{tabular}{c}
@@ -53,9 +46,15 @@ The Polybench test suite is a set of 30 computational kernels drawn from several
 
 
 
+%%
+The Polybench test suite is a set of 30 computational kernels drawn from several different domains and is commonly used for evaluating the impact of memory performance with respect to those tasks. We previously used Polybench~\cite{doudali2017comerge}, and Polybench continues to be actively used for evaluating memory optimizer performance.
+%%
+
+
+
 % Need to define this somewhere
 \definecolor{Gray}{gray}{0.9}
-\begin{table*}[!hb]
+\begin{table*}[!ht]
 	\caption{Polybench Test Results: data size, by memory type (DRAM, PMEM, iPMEM), page size (4K, 2M), and optimization (\texttt{-O3} versus \texttt{-poly}).  Execution time in seconds; sorted by 4K DRAM time improvement (optimized versus poly). Only shows test where polyhedral optimization benefitted at least one memory configuration (before rounding); other results omitted. Memory locality impact differs across memory types and configurations. CPU and memory allocation bound to one NUMA node. Ratio > 1 (pre-rounding) shows polyhedral optimization benefits.}
 	\label{table:poly2}
   \begin{adjustbox}{max width=\textwidth}
