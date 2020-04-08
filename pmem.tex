@@ -90,7 +90,7 @@ DC Persistent Memory}}
 \IEEEtitleabstractindextext{%
 \begin{abstract}
   %%
-  We evaluated Intel\textsuperscript{\textregistered} Optane\textsuperscript{\tiny TM} DC Persistent Memory and found that Intel's persistent memory is highly sensitive to data locality, size, and access patterns, which becomes clearer by optimizing both virtual memory page size and data layout for locality. Using the \textit{Polybench} high-performance computing benchmark suite and controlling for mapped page size, we evaluate PMEM performance relative to DRAM. In particular, the Linux persistent memory (PMEM) support automatically maps persistent memory in large pages.  The effect of large pages for PMEM and small pages for DRAM is enormous, dwarfing other effects discussed in the literature.  We found PMEM performance comparable to DRAM performance for a number of tests with significant performance improvements when optimized for data locality.
+  We evaluated Intel\textsuperscript{\textregistered} Optane\textsuperscript{\tiny TM} DC Persistent Memory and found that Intel's persistent memory is highly sensitive to data locality, size, and access patterns, which becomes clearer by optimizing both virtual memory page size and data layout for locality. Using the \textit{Polybench} high-performance computing benchmark suite and controlling for mapped page size, we evaluate persistent meemory (PMEM) performance relative to DRAM. In particular, the Linux PMEM support maps preferentially maps persistent memory in large pages while always mapping DRAM to small pages.  We observed using large pages for PMEM and small pages for DRAM can create a 5x difference in performance, dwarfing other effects discussed in the literature.  We found PMEM performance comparable to DRAM performance for the majority of tests when controlled for page size and optimized for data locality.
   %%  
 \end{abstract}
 
@@ -120,24 +120,18 @@ Persistent Memory
 \input{evaluation}
 
 
-\begin{comment}
-\section{Future Work}
-
-Our results suggest a number of areas for future work: (1) we need to evaluate the existing polyhedral optimizations to determine why they do not benefit $\approx \frac{1}{3}$ of the Polybench tests.  We expect we will use detailed study of PMEM behavior to better understand the impact on data locality.  (2) We anticipate better understanding of dataset partitioning across multiple caching layers with different optimization functions could yield better insights into developing memory optimization tools. (3) We theorize that memory optimizaiton tools should provide multiple potential implementations optimized to explit specific memory topologies.  (4) We propose developing a DAX-optimized file system that focuses on providing optimal performance of PMEM as well as application sharing, dynamic allocation, and security focused on maximizing performance of applications using PMEM via the DAX model.
-\end{comment}
-
 \section{Conclusion}
 
 %%
-We found PMEM is more sensitive to memory locality than DRAM; this is due to differences in the hardware implementing these memory technologies.  The decision to default PMEM to large pages provides a substantial boost in page locality.  As datasets grow in size, using large pages yields better TLB locality because more actual PMEM can be described with a fixed number of TLB entries.  PMEM's support for interleaving is most beneficial for data with both good locality and high bandwidth requirements; non-interleaved PMEM works comparably well to interleaved PMEM with good data locality and moderate bandwidth requirements, such as with CPUs employing larger caches.
+We found PMEM is more sensitive to memory locality than DRAM; this is due to differences in the hardware implementing these memory technologies.  The Linux policy to use large pages by default with PMEM provides better TLB and page table locality, which translates to better performance.  Given that large dataset usage is an important use for PMEM, it makes sense to optimize for efficient TLB and last level cache usage rather than demand paging.  Interleaved PMEM (iPMEM) yields higher bandwith than non-interleaved PMEM, but non-interleaved PMEM benefits more than iPMEM from the polyehedral optimizers data locality improvements.
 %%
 
 %%
-We caution those evaluating PMEM to ensure the evaluation properly controls for page size because it's impact may lead to incorrect results.  Those using PMEM should consider optimizing data locality as  it can lead to substantial performance gains.  However, those gains are clearly sensitive to the behavior of the underlying memory and thus are dependent upon the workload. Not optimizing risks sacrificing performance when using PMEM.
+We found it was critical for proper evaluation to ensure properly controlling for Linux page size handling to ensure our comparisons between DRAM and PMEM were valid. We observed that locality optimization, both for virtual address translation and memory access, were critical to achieving optimal results with PMEM.  We also observed that the benefits of various optimizations differed substantially across workloads when using PMEM. We found substantial performance penalties for \textit{not} optimizing with PMEM.
 %%
 
 %%
-While our evaluation was done with the first generation of commercially available PMEM, we expect these insights will generalize to future implementations of PMEM, particularly those related to the impact of data locality, OS behavior, and caching/striping (interleaving) of PMEM.
+While our evaluation was done with the first generation of commercially available PMEM, we expect these insights will generalize to future implementations of PMEM, particularly those related to the impact of data locality, OS behavior, PMEM caching, and PMEM interleaving.
 %%
 
 

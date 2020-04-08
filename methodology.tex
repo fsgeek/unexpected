@@ -2,7 +2,7 @@
 \begin{figure}[!th]
   \captionsetup{justification=centering}
   \centering
-  \caption{Polybench: DRAM vs Interleaved PMEM (both 4K pages).  Results closer to expectations but still better than expected.  Caching masks lower bandwidth of PMEM; memory usage optimization improves cache benefits which improves performance and decreases benefit of PMEM interleaving.}
+  \caption{Polybench: DRAM vs Interleaved PMEM (both 4K pages).  Results closer to expectations but still better than expected.  Caching masks lower bandwidth of PMEM; memory usage optimization improves cache benefits which improves performance and decreases benefit of PMEM interleaving. Sorted by PMEM performance.}
   \vspace{2mm}
   \label{fig:polybench:dram-vs-ipmem-4k}
   \begin{tabular}{c}
@@ -12,12 +12,12 @@
 
 
 %%
-PMEM's AppDirect mode permits two types of direct-access (DAX) usage: \textit{devdax} access, which provides raw PMEM that is memory mapped by an application for exclusive use. Devdax mode requires pre-selecting memory allocation units (4KB, 2MB, and 1GB), static partitioning of the overall memory, using the ``ndctl'' utility, and is restricted to privileged applications; and \textit{fsdax} access, which uses a DAX-aware file system to provide support for sharing between multiple applications, dynamic memory allocation --- including page alignment and allocation unit size, and multi-user security.  When an application memory maps a file on a DAX-aware file system the operating system configures the process page tables to directly reference the physical addresses of the underlying PMEM.  Preferred practice is to use a DAX-aware file system~\cite{rudoff2019NVMProgrammingModel}.
+PMEM's AppDirect mode permits two types of direct-access (DAX) usage: \textit{devdax} access, which provides raw PMEM that is memory mapped by an application for exclusive use. Devdax mode requires pre-selecting memory allocation units (4KB, 2MB, and 1GB), static partitioning of the overall memory, using the ``ndctl'' utility, and is restricted to privileged applications; and \textit{fsdax} access, which uses a DAX-aware file system to provide support for sharing between multiple applications, dynamic memory allocation --- including page alignment and allocation unit size, and multi-user security.  When an application memory maps a file on a DAX-aware file system the operating system configures the process page tables to directly reference the physical addresses of the underlying PMEM.  Preferred practice is to use a DAX-aware file system~\cite{rudoff2019NVMProgrammingModel}. We used DAX-aware file systems for our investigation.
 %%
 
 
 %%
-The Persistent Memory Development Kit (PMDK) includes libraries for transparently converting standard memory allocation calls (e.g., \textit{malloc}) to a memory allocator using arenas backed directly by files on a DAX filesystem device.  This is similar to the approach used by \textit{hugetlbfs}, a Linux file sytem that exposes DRAM to applications for allocation against large pages --- the standard malloc calls in that case are implemented using arenas backed directly by files on hugetlbfs.  We use both of these mechanisms in our evaluation of the Polybench tests.
+The Persistent Memory Development Kit (PMDK) includes libraries for transparently converting standard memory allocation calls (e.g., \textit{malloc}) to a memory allocator using arenas backed directly by files on a DAX filesystem device.  This is similar to the approach used by \textit{hugetlbfs}, a Linux file system that exposes DRAM to applications for allocation against large pages --- the standard malloc calls in that case are implemented using arenas backed directly by files on hugetlbfs.  We use both of these mechanisms in our evaluation of the Polybench tests.
 %%
 
 %%
@@ -25,12 +25,12 @@ Our PMEM hardware uses two dedicated memory controllers per CPU; each memory con
 %%
 
 %%
-The Linux operating system includes native support for PMEM.  However, the policies for PMEM differ from the ones for DRAM. The Linux kernel transparently uses large memory page mappings for PMEM whenever possible, as dictated by the alignment and length of the page mappings.  Linux version 5.3 uses 1GB, 2MB, or 4KB page sizes for PMEM when setting up page tables for running processes.  Earlier Linux versions only used 2MB or 4KB pages for PMEM. The default for DRAM remains 4KB.  We note that large page performance impact is well-described in the literature~\cite{agarwal2017thermostat,panwar2018making}.  While Linux behavior can be tuned, because default page sizes differ for PMEM and DRAM, it can create significant performance differences --- we observed up to 5x difference.
+The Linux operating system includes native support for PMEM.  However, the policies for PMEM differ from those for DRAM. The Linux kernel transparently uses large memory page mappings for PMEM whenever possible, as dictated by the alignment and length of the page mappings, falling back to smaller sizes as necessary.  Linux version 5.3 uses 1GB, 2MB, or 4KB page sizes for PMEM.  Earlier Linux versions only used 2MB or 4KB pages for PMEM. The default for DRAM remains 4KB.  We note that large page performance impact is well-described in the literature~\cite{agarwal2017thermostat,panwar2018making}. This difference accounted for PMEM performing up to 5x better than DRAM.
 %%
 
 
 %%
-We evaluated three different DAX-aware file systems: ext and xfs, which are standard Linux file systems incorporating experimental DAX support, and NOVA. The NOVA file system was the first purpose-built file system for PMEM~\cite{xu2016nova}.  However, we found NOVA unsuitable for use as a DAX file system, because its storage allocation policy does not preserve the 2MB page alignment the OS requires to provide large page support; this is not reported in even recent literature~\cite{izraelevitz2019basic,yang2019empirical}. Initially, we had not expected our choice of DAX-aware file systems to be relevant, as once memory mapped, the PMEM is directly accessed by the application.  As a result of our discovery, our evaluation in this paper uses ext4, which did not exhibit the behavior observed with NOVA.
+We evaluated three different DAX-aware file systems: ext and xfs, which are standard Linux file systems incorporating experimental DAX support, and NOVA. The NOVA file system was the first purpose-built file system for PMEM~\cite{xu2016nova}.  However, we found NOVA unsuitable for use as a DAX file system, because its storage allocation policy does not preserve the 2MB page alignment Linux requires for large page support; this is not reported in even recent literature~\cite{izraelevitz2019basic,yang2019empirical}. We did not expect our DAX-aware file system choice to be relevant, as once memory mapped, applications directly access the PMEM.  We used ext4 for our evaluation, as it allowed us to control PMEM alignment.
 %%
 
 \begin{figure}[!b]
@@ -47,7 +47,7 @@ We evaluated three different DAX-aware file systems: ext and xfs, which are stan
 
 
 %%
-The Polybench test suite is a set of 30 computational kernels drawn from several different domains and is commonly used for evaluating the impact of memory performance with respect to those tasks. We previously used Polybench~\cite{doudali2017comerge}, and Polybench continues to be actively used for evaluating memory optimizer performance.
+The Polybench test suite is a set of 30 computational kernels drawn from varied domains. It is commonly used for evaluating the impact of memory performance with respect to those tasks. We previously used Polybench~\cite{doudali2017comerge}. Polybench continues to be actively used for evaluating memory optimizer performance.
 %%
 
 
